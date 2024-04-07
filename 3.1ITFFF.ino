@@ -42,22 +42,22 @@ void loop() {
   if (lux >= 500 && !wasInSunlight) { // Entering sunlight
     wasInSunlight = true;
     sunlightEntryTime = millis(); // Record the time when the terrarium enters sunlight
-    sendSunlightChangeToIFTTT("Entering_sunlight", 0, totalSunlightDuration); // Send notification for entering sunlight with default duration 0 and total duration
+    sendSunlightChangeToIFTTT("Entering_sunlight", lux, totalSunlightDuration); // Send notification for entering sunlight with lux level and total duration
   } else if (lux < 500 && wasInSunlight) { // Exiting sunlight
     wasInSunlight = false;
     unsigned long sunlightExitTime = millis(); // Record the time when the terrarium exits sunlight
     unsigned long sunlightDuration = (sunlightExitTime - sunlightEntryTime) / 1000; // Calculate duration in seconds
     totalSunlightDuration += sunlightDuration; // Update total duration
-    sendSunlightChangeToIFTTT("Exiting_sunlight", sunlightDuration, totalSunlightDuration); // Send notification for exiting sunlight along with durations
+    sendSunlightChangeToIFTTT("Exiting_sunlight", lux, totalSunlightDuration); // Send notification for exiting sunlight along with lux level and durations
   }
 
   delay(10000); // Delay for a bit before taking the next reading
 }
 
-void sendSunlightChangeToIFTTT(const char* message, unsigned long duration, unsigned long totalDuration) {
+void sendSunlightChangeToIFTTT(const char* message, float luxLevel, unsigned long totalDuration) {
   if (client.connect(hostName, 80)) {
     // Prepare the URL query string
-    String queryString = String(eventPath) + "?value1=" + String(message) + "&value2=" + String(duration) + "&value3=" + String(totalDuration);
+    String queryString = String(eventPath) + "?value1=" + String(message) + "&value2=" + String(luxLevel) + "&value3=" + String(totalDuration);
 
     client.println("GET " + queryString + " HTTP/1.1");
     client.println("Host: " + String(hostName));
@@ -66,7 +66,7 @@ void sendSunlightChangeToIFTTT(const char* message, unsigned long duration, unsi
 
     Serial.println("Sending data to IFTTT:");
     Serial.println("Message: " + String(message));
-    Serial.println("Duration (Instance): " + String(duration) + " seconds");
+    Serial.println("Lux Level: " + String(luxLevel));
     Serial.println("Total Duration: " + String(totalDuration) + " seconds");
 
     // Wait for response from the server
